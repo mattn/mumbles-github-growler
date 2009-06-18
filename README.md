@@ -20,14 +20,18 @@ AUTHOR:
 BUILD:
 ------
 
+make a plugin package
+
 	# cd plugin
 	# python setup.py bdist_egg
 	# cp dist/GithubMumbles-* ~/.mumbles/plugin/.
+
+copy github default icon to icon directory
+
 	# cp plugin/github.png ~/.mumbles/plugin/icons/.
 
-	# vi checker/githubcheck.py
+start checker script for github
 
-		change USER and TOKEN in script.
+	# ./checker/githubcheck.py
 
-	# python checker/githubcheck.py
-
+if you start at first time, you see $EDITOR in your terminal. this script store user or token to this file like YAML.
