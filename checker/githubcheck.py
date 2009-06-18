@@ -1,28 +1,33 @@
 #!/usr/bin/env python
-USER='YOUR-GITHUB-USER-ID'
-TOKEN='YOUR-GITHUB-TOKEN-ID'
 
 UPDATE_INTERVAL=1000 # 10 minutes
 MAX_NOTIFICATIONS = 40
 DEBUG = True
 ##################################################
 
-import feedparser
-import gobject
+import os
+import sys
+import time
+import getopt
 import rfc822
 import calendar
-import time
 import urllib
+import feedparser
 import dbus
 import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
-import os
-import sys
-import getopt
+import gobject
 from BeautifulSoup import BeautifulSoup
+from pit import Pit
 
 GITHUB_DBUS_INTERFACE = 'com.github.DBus'
 GITHUB_DBUS_PATH = '/com/github/DBus'
+
+config = Pit.get('github.com', {'require': {
+    'user'  : 'user id on github.com',
+    'token' : 'user token on github.com'
+    }})
+print config
 
 class Usage(Exception):
   def __init__(self, msg=None):
@@ -60,15 +65,6 @@ class GithubCheck(dbus.service.Object):
   def NotifyNum(self, num):
     pass
 
-  def unescape(self, s):
-    s = s.replace("&lt;", "<")
-    s = s.replace("&gt;", ">")
-    s = s.replace("&apos;", "'")
-    s = s.replace("&quot;", '"')
-    # this has to be last:
-    s = s.replace("&amp;", "&")
-    return s
-
   def _check(self):
     if self.debug:
       if self.lastCheck:
@@ -77,7 +73,7 @@ class GithubCheck(dbus.service.Object):
         print "checking feed:"
 
     try:
-      items = feedparser.parse("http://github.com/%s.private.atom/?token=%s" % (USER, TOKEN))['entries']
+      items = feedparser.parse("http://github.com/%s.private.atom/?token=%s" % (config['user'], config['token']))['entries']
     except Exception, e:
       items = []
 
@@ -105,12 +101,9 @@ class GithubCheck(dbus.service.Object):
           html = urllib.urlopen('http://github.com/%s' % item['author']).read()
           soup = BeautifulSoup(html)
           img = soup.findAll('div', {'class':'identity'})[0].find('img')['src']
+          img = img.replace("?s=50&", "?s=30&");
           urllib.urlretrieve(img, path)
-        body = BeautifulSoup(item['subtitle']).findAll(text=True)
-        text = ''
-        for b in body:
-          text = text + b.replace("\n", " ").strip()
-        self.Notify(item['link'], item['author'], text)
+        self.Notify(item['link'], item['author'], item['title'])
     gobject.timeout_add(self.interval,self._check)
 
 if __name__ == '__main__':
