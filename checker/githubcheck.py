@@ -27,7 +27,6 @@ config = Pit.get('github.com', {'require': {
     'user'  : 'user id on github.com',
     'token' : 'user token on github.com'
     }})
-print config
 
 class Usage(Exception):
   def __init__(self, msg=None):
@@ -104,6 +103,7 @@ class GithubCheck(dbus.service.Object):
           img = img.replace("?s=50&", "?s=30&");
           urllib.urlretrieve(img, path)
         self.Notify(item['link'], item['author'], item['title'])
+        time.sleep(6)
     gobject.timeout_add(self.interval,self._check)
 
 if __name__ == '__main__':
