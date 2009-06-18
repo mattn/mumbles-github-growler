@@ -37,9 +37,7 @@ class Usage(Exception):
       self.msg = app+": DBus notifications on new github messages.\n"
 
 class GithubCheck(dbus.service.Object):
-  def __init__(self, public_only=False):
-    self._public_only = public_only
-
+  def __init__(self):
     session_bus = dbus.SessionBus()
     bus_name = dbus.service.BusName(GITHUB_DBUS_INTERFACE, bus=session_bus)
     dbus.service.Object.__init__(self, bus_name, GITHUB_DBUS_PATH)
@@ -49,8 +47,8 @@ class GithubCheck(dbus.service.Object):
     self.debug = DEBUG
 
     self.lastCheck = None
-
     self.minInterval = 60000 # 1 minute min refresh interval
+
     if self.interval < self.minInterval:
       print "Warning: Cannot check github more often than once a minute! Using default of 1 minute."
       self.interval = self.minInterval
@@ -70,7 +68,6 @@ class GithubCheck(dbus.service.Object):
         print "checking feed (newer than %s):" %(self.lastCheck)
       else:
         print "checking feed:"
-
     try:
       items = feedparser.parse("http://github.com/%s.private.atom/?token=%s" % (config['user'], config['token']))['entries']
     except Exception, e:
@@ -83,7 +80,6 @@ class GithubCheck(dbus.service.Object):
           items.remove(item)
 
     self.lastCheck = rfc822.formatdate()
-
     num_notifications = len(items)
 
     if num_notifications > MAX_NOTIFICATIONS:
@@ -107,10 +103,7 @@ class GithubCheck(dbus.service.Object):
     gobject.timeout_add(self.interval,self._check)
 
 if __name__ == '__main__':
-
   DBusGMainLoop(set_as_default=True)
-
-  public_only = False
   try:
     try:
       opts, args = getopt.getopt(
@@ -127,7 +120,7 @@ if __name__ == '__main__':
     print >> sys.stderr, err.msg
     sys.exit(2)
 
-  t = GithubCheck(public_only)
+  t = GithubCheck()
   try:
     loop = gobject.MainLoop()
     loop.run()
